@@ -1,0 +1,22 @@
+[
+	{
+		"device_id": "device-initial-1",
+		"post_id": "c1a2b3d4-1111-2222-3333-444444444444",
+		"nickname": "運営",
+		"content": "体育祭掲示板へようこそ！リアルタイムで感想や応援メッセージを投稿してください。",
+		"timestamp": "2026-05-29T12:00:00Z",
+		"imageUrl": null,
+		"reactions": { "like": 0, "heart": 0, "fire": 0, "surprise": 0 },
+		"deleted": false
+	},
+	{
+		"device_id": "device-initial-2",
+		"post_id": "d2b3c4e5-5555-6666-7777-888888888888",
+		"nickname": "注意",
+		"content": "投稿には個人情報を含めないでください。画像は最大20MBまで、1投稿につき1枚のみです。",
+		"timestamp": "2026-05-29T12:05:00Z",
+		"imageUrl": null,
+		"reactions": { "like": 0, "heart": 0, "fire": 0, "surprise": 0 },
+		"deleted": false
+	}
+]
