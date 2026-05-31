@@ -1,10 +1,60 @@
-body{ font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif; margin:0; padding:1rem; background:#f7f7f7 }
-.container{ max-width:800px; margin:0 auto }
-.post-form{ display:flex; flex-direction:column; gap:0.5rem; margin-bottom:1rem }
-.post-form input, .post-form textarea { padding:0.5rem; font-size:1rem }
-.posts { display:flex; flex-direction:column; gap:0.75rem }
-.post { background:white; padding:0.75rem; border-radius:6px }
-.post.mine{ background:#e6f7ff }
-.post img{ max-width:100%; height:auto; margin-top:0.5rem }
-.meta{ display:flex; justify-content:space-between; font-size:0.9rem; color:#333 }
-.reactions{ margin-top:0.5rem; display:flex; gap:0.75rem; color:#666 }
+body {
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    margin: 0;
+    padding: 1rem;
+    background: #f7f7f7
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto
+}
+
+.post-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem
+}
+
+.post-form input,
+.post-form textarea {
+    padding: 0.5rem;
+    font-size: 1rem
+}
+
+.posts {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem
+}
+
+.post {
+    background: white;
+    padding: 0.75rem;
+    border-radius: 6px
+}
+
+.post.mine {
+    background: #e6f7ff
+}
+
+.post img {
+    max-width: 100%;
+    height: auto;
+    margin-top: 0.5rem
+}
+
+.meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    color: #333
+}
+
+.reactions {
+    margin-top: 0.5rem;
+    display: flex;
+    gap: 0.75rem;
+    color: #666
+}
