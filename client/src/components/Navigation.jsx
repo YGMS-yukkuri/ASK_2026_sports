@@ -1,0 +1,31 @@
+import { useNavigate } from 'react-router-dom'
+import { useWebSocket } from '../hooks/useWebSocket'
+import './Navigation.css'
+
+export default function Navigation({ onPostClick }) {
+  const navigate = useNavigate()
+  const { connected } = useWebSocket(() => {})
+
+  return (
+    <nav className="navbar">
+      <div className="navbar-container">
+        <div className="navbar-brand" onClick={() => navigate('/')}>
+          💻STEM研究部
+        </div>
+        <div className="navbar-center">
+          <h1>🎊 体育祭掲示板</h1>
+          <p>メッセージを投稿して感想を共有しよう！</p>
+        </div>
+        <div className="navbar-controls">
+          {connected && <span className="connection-status">🟢 接続中</span>}
+          <button
+            className="nav-post-btn"
+            onClick={onPostClick}
+          >
+            ✏️ 投稿
+          </button>
+        </div>
+      </div>
+    </nav>
+  )
+}

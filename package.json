@@ -1,0 +1,23 @@
+{
+  "name": "ask_2026_sports",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YGMS-yukkuri/ASK_2026_sports.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/YGMS-yukkuri/ASK_2026_sports/issues"
+  },
+  "homepage": "https://github.com/YGMS-yukkuri/ASK_2026_sports#readme"
+}

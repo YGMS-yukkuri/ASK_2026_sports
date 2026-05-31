@@ -1,0 +1,154 @@
+.navbar {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.navbar-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 30px;
+  min-height: auto;
+}
+
+.navbar-brand {
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: opacity 0.3s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.navbar-brand:hover {
+  opacity: 0.8;
+}
+
+.navbar-center {
+  flex: 1;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+}
+
+.navbar-center h1 {
+  font-size: 24px;
+  margin: 0;
+  font-weight: bold;
+}
+
+.navbar-center p {
+  font-size: 14px;
+  margin: 0;
+  opacity: 0.95;
+}
+
+.navbar-controls {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.connection-status {
+  font-size: 13px;
+  white-space: nowrap;
+  display: inline-block;
+}
+
+.nav-post-btn {
+  background: white;
+  color: #667eea;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.nav-post-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+@media (max-width: 768px) {
+  .navbar-center {
+    text-align: center;
+    margin: 0 10px;
+  }
+
+  .navbar-center h1 {
+    font-size: 18px;
+  }
+
+  .navbar-center p {
+    font-size: 12px;
+  }
+
+  .navbar-controls {
+    flex-direction: column;
+    gap: 10px;
+  }
+}
+
+@media (max-width: 640px) {
+  .navbar-container {
+    flex-wrap: wrap;
+    padding: 10px 15px;
+    gap: 10px;
+  }
+
+  .navbar-brand {
+    font-size: 16px;
+  }
+
+  .navbar-center h1 {
+    font-size: 16px;
+  }
+
+  .navbar-center p {
+    font-size: 11px;
+    display: none;
+  }
+
+  .nav-post-btn {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+  }
+}
+
+.nav-link.active {
+  background-color: rgba(255,255,255,0.3);
+  border-bottom: 2px solid white;
+}
+
+@media (max-width: 768px) {
+  .navbar-brand {
+    font-size: 18px;
+  }
+
+  .navbar-links {
+    gap: 10px;
+  }
+
+  .nav-link {
+    font-size: 14px;
+    padding: 8px 12px;
+  }
+}
