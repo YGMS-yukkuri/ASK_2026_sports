@@ -41,7 +41,6 @@ router.post('/posts', adminAuth, async (req, res) => {
           '{}'::json
         ) as reactions
       FROM posts p
-      GROUP BY p.id
       ORDER BY p.timestamp DESC`
     );
 

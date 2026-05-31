@@ -11,6 +11,42 @@ const REACTIONS = {
 export default function PostCard({ post, deviceId, isOwnPost }) {
   const [reactions, setReactions] = useState(post.reactions || {})
   const [userReactions, setUserReactions] = useState({})
+  const [animatingReactions, setAnimatingReactions] = useState({})
+
+  // Update reactions when post.reactions changes (for WebSocket real-time sync)
+  useEffect(() => {
+    const newReactions = post.reactions || {}
+    const prevReactions = reactions || {}
+    
+    // Detect which reactions changed and trigger animation
+    const changedReactions = {}
+    Object.entries(REACTIONS).forEach(([type]) => {
+      if ((newReactions[type] || 0) !== (prevReactions[type] || 0)) {
+        changedReactions[type] = true
+      }
+    })
+    
+    // Update reactions state
+    setReactions(newReactions)
+    
+    // Trigger animation if any reactions changed
+    if (Object.keys(changedReactions).length > 0) {
+      // Remove animation class first to allow retriggering on rapid clicks
+      setAnimatingReactions({})
+      
+      // Use requestAnimationFrame to ensure DOM update before re-adding animation
+      requestAnimationFrame(() => {
+        setAnimatingReactions(changedReactions)
+        
+        // Remove animation class after animation completes (600ms)
+        const timer = setTimeout(() => {
+          setAnimatingReactions({})
+        }, 600)
+        
+        return () => clearTimeout(timer)
+      })
+    }
+  }, [post.reactions])
 
   // Fetch user's reactions from server on mount
   useEffect(() => {
@@ -92,12 +128,12 @@ export default function PostCard({ post, deviceId, isOwnPost }) {
           {Object.entries(REACTIONS).map(([type, emoji]) => (
             <button
               key={type}
-              className={`reaction-btn ${userReactions[type] ? 'active' : ''}`}
+              className={`reaction-btn ${userReactions[type] ? 'active' : ''} ${animatingReactions[type] ? 'pulse-animate' : ''}`}
               onClick={() => handleReaction(type)}
               title={userReactions[type] ? 'リアクションを削除' : 'リアクションを追加'}
             >
               <span className="emoji">{emoji}</span>
-              <span className="count">{reactions[type] || 0}</span>
+              <span className={`count ${animatingReactions[type] ? 'count-pulse' : ''}`}>{reactions[type] || 0}</span>
             </button>
           ))}
         </div>

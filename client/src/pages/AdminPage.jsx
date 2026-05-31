@@ -1,6 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useWebSocket } from '../hooks/useWebSocket'
 import './AdminPage.css'
+
+const REACTIONS = {
+  like: '👍',
+  heart: '❤️',
+  fire: '🔥',
+  surprise: '😲'
+}
 
 export default function AdminPage() {
   const navigate = useNavigate()
@@ -10,6 +18,69 @@ export default function AdminPage() {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [animatingReactions, setAnimatingReactions] = useState({}) // postId_reactionType -> true
+
+  // Helper function to convert relative image URLs to absolute
+  const getImageUrl = (imageUrl) => {
+    if (!imageUrl) return null
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      return imageUrl
+    }
+    const apiBase = 'http://localhost:5000'
+    return `${apiBase}${imageUrl}`
+  }
+
+  // WebSocket for real-time updates
+  const { connected } = useWebSocket((message) => {
+    if (message.type === 'new_post') {
+      setPosts(prev => [message.data, ...prev])
+    } else if (message.type === 'post_deleted') {
+      setPosts(prev => prev.filter(p => p.id !== message.data.postId))
+    } else if (message.type === 'reaction_update') {
+      const postId = message.data.postId
+      
+      // Mark which reactions changed for animation
+      const newAnimating = {}
+      Object.keys(REACTIONS).forEach(type => {
+        const reactionKey = `${postId}_${type}`
+        const newCount = message.data.reactions[type] || 0
+        const oldPost = posts.find(p => p.id === postId)
+        const oldCount = oldPost?.reactions?.[type] || 0
+        
+        if (newCount !== oldCount) {
+          newAnimating[reactionKey] = true
+        }
+      })
+      
+      // Remove animation first to allow retriggering
+      setAnimatingReactions({})
+      
+      // Use requestAnimationFrame to ensure DOM update before re-adding animation
+      requestAnimationFrame(() => {
+        setAnimatingReactions(prev => ({ ...prev, ...newAnimating }))
+        
+        // Remove animation after completion
+        if (Object.keys(newAnimating).length > 0) {
+          const timer = setTimeout(() => {
+            setAnimatingReactions(prev => {
+              const updated = { ...prev }
+              Object.keys(newAnimating).forEach(key => delete updated[key])
+              return updated
+            })
+          }, 600)
+          
+          return () => clearTimeout(timer)
+        }
+      })
+      
+      // Update posts
+      setPosts(prev => prev.map(p => 
+        p.id === postId 
+          ? { ...p, reactions: message.data.reactions }
+          : p
+      ))
+    }
+  })
 
   async function handleLogin(e) {
     e.preventDefault()
@@ -162,7 +233,20 @@ export default function AdminPage() {
                 </div>
 
                 {post.image_url && (
-                  <img src={post.image_url} alt="Post" className="admin-post-image" />
+                  <img src={getImageUrl(post.image_url)} alt="Post" className="admin-post-image" />
+                )}
+
+                {post.reactions && Object.keys(post.reactions).length > 0 && (
+                  <div className="admin-post-reactions">
+                    {Object.entries(post.reactions).map(([type, count]) => (
+                      <span 
+                        key={type} 
+                        className={`reaction-badge ${animatingReactions[`${post.id}_${type}`] ? 'badge-pulse' : ''}`}
+                      >
+                        {REACTIONS[type]} {count}
+                      </span>
+                    ))}
+                  </div>
                 )}
 
                 {!post.deleted && (
