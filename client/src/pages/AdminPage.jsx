@@ -26,8 +26,8 @@ export default function AdminPage() {
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
       return imageUrl
     }
-    const apiBase = 'http://localhost:5000'
-    return `${apiBase}${imageUrl}`
+    // Use relative paths for images (works in both dev and production)
+    return imageUrl
   }
 
   // WebSocket for real-time updates

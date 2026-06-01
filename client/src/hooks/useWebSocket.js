@@ -23,10 +23,10 @@ export function useWebSocket(onMessage) {
           ws.current.close()
         }
 
-        // Determine WebSocket protocol
+        // Determine WebSocket protocol and host
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-        const hostname = window.location.hostname || 'localhost'
-        const wsUrl = `${protocol}//${hostname}:5000`
+        const host = window.location.host // Includes hostname and port (or default port)
+        const wsUrl = `${protocol}//${host}`
 
         console.log(`[WebSocket] Attempting to connect to ${wsUrl}`)
 

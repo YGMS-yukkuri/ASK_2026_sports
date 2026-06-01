@@ -7,6 +7,9 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
+    "build": "cd ../client && npm run build",
+    "build:server": "echo 'Server is ready'",
+    "start:prod": "npm run build:server && node src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

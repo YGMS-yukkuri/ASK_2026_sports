@@ -1,8 +1,8 @@
 .navbar {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #eba843;
   color: white;
   padding: 0;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   position: sticky;
   top: 0;
   z-index: 1000;
@@ -20,12 +20,13 @@
 }
 
 .navbar-brand {
-  font-size: 20px;
+  font-size: 25px;
   font-weight: bold;
   cursor: pointer;
   transition: opacity 0.3s;
   white-space: nowrap;
   flex-shrink: 0;
+  font-family: Orbitron, sans-serif;
 }
 
 .navbar-brand:hover {
@@ -64,7 +65,7 @@
 }
 
 .connection-status {
-  font-size: 13px;
+  font-size: 15px;
   white-space: nowrap;
   display: inline-block;
 }
@@ -119,7 +120,7 @@
   }
 
   .navbar-center h1 {
-    font-size: 16px;
+    font-size: 20px;
   }
 
   .navbar-center p {
@@ -134,7 +135,7 @@
 }
 
 .nav-link.active {
-  background-color: rgba(255,255,255,0.3);
+  background-color: rgba(255, 255, 255, 0.3);
   border-bottom: 2px solid white;
 }
 

@@ -106,9 +106,8 @@ export default function PostCard({ post, deviceId, isOwnPost }) {
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
       return imageUrl;
     }
-    // If it's a relative path, prepend the API base URL
-    const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-    return `${apiBase}${imageUrl}`;
+    // Use relative paths for images (works in both dev and production)
+    return imageUrl;
   };
 
   return (

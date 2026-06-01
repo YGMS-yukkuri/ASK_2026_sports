@@ -10,19 +10,19 @@ export default function Navigation({ onPostClick }) {
     <nav className="navbar">
       <div className="navbar-container">
         <div className="navbar-brand" onClick={() => navigate('/')}>
-          💻STEM研究部
+          💻STEM
         </div>
         <div className="navbar-center">
-          <h1>🎊 体育祭掲示板</h1>
+          <h1>体育祭掲示板</h1>
           <p>メッセージを投稿して感想を共有しよう！</p>
         </div>
         <div className="navbar-controls">
-          {connected && <span className="connection-status">🟢 接続中</span>}
+          {connected && <span className="connection-status">🟢 オンライン</span>}
           <button
             className="nav-post-btn"
             onClick={onPostClick}
           >
-            ✏️ 投稿
+            ✏️ 新規投稿
           </button>
         </div>
       </div>
