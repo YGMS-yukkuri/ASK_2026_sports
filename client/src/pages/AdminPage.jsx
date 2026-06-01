@@ -39,7 +39,7 @@ export default function AdminPage() {
     } else if (message.type === 'reaction_update') {
       const postId = message.data.postId
       
-      // Mark which reactions changed for animation
+      // Mark which reactions changed for animation and determine direction
       const newAnimating = {}
       Object.keys(REACTIONS).forEach(type => {
         const reactionKey = `${postId}_${type}`
@@ -48,29 +48,17 @@ export default function AdminPage() {
         const oldCount = oldPost?.reactions?.[type] || 0
         
         if (newCount !== oldCount) {
-          newAnimating[reactionKey] = true
+          // Store direction: 'up' if increased, 'down' if decreased
+          newAnimating[reactionKey] = newCount > oldCount ? 'up' : 'down'
         }
       })
       
-      // Remove animation first to allow retriggering
+      // Remove animation first to allow retriggering on rapid clicks
       setAnimatingReactions({})
       
       // Use requestAnimationFrame to ensure DOM update before re-adding animation
       requestAnimationFrame(() => {
         setAnimatingReactions(prev => ({ ...prev, ...newAnimating }))
-        
-        // Remove animation after completion
-        if (Object.keys(newAnimating).length > 0) {
-          const timer = setTimeout(() => {
-            setAnimatingReactions(prev => {
-              const updated = { ...prev }
-              Object.keys(newAnimating).forEach(key => delete updated[key])
-              return updated
-            })
-          }, 600)
-          
-          return () => clearTimeout(timer)
-        }
       })
       
       // Update posts
@@ -120,6 +108,15 @@ export default function AdminPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Handle badge animation end to reset animation state
+  const handleAnimationEnd = (reactionKey) => {
+    setAnimatingReactions(prev => {
+      const updated = { ...prev }
+      delete updated[reactionKey]
+      return updated
+    })
   }
 
   async function handleDeletePost(postId) {
@@ -238,14 +235,19 @@ export default function AdminPage() {
 
                 {post.reactions && Object.keys(post.reactions).length > 0 && (
                   <div className="admin-post-reactions">
-                    {Object.entries(post.reactions).map(([type, count]) => (
-                      <span 
-                        key={type} 
-                        className={`reaction-badge ${animatingReactions[`${post.id}_${type}`] ? 'badge-pulse' : ''}`}
-                      >
-                        {REACTIONS[type]} {count}
-                      </span>
-                    ))}
+                    {Object.entries(post.reactions).map(([type, count]) => {
+                      const animKey = `${post.id}_${type}`
+                      const isAnimating = animatingReactions[animKey]
+                      return (
+                        <span 
+                          key={type} 
+                          className={`reaction-badge ${isAnimating === 'up' ? 'badge-flip-up' : isAnimating === 'down' ? 'badge-fade-down' : ''}`}
+                          onAnimationEnd={() => handleAnimationEnd(animKey)}
+                        >
+                          {REACTIONS[type]} {count}
+                        </span>
+                      )
+                    })}
                   </div>
                 )}
 
