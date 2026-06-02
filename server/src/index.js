@@ -14,8 +14,11 @@ import imageRoutes from './routes/images.js';
 // Database
 import { initializeDatabase } from './db/index.js';
 
+// Cache (Redis with in-memory fallback)
+import { initCache } from './utils/cache.js';
+
 // WebSocket Handler
-import { handleWebSocket } from './websocket/handler.js';
+import { handleWebSocket, startHeartbeat } from './websocket/handler.js';
 
 dotenv.config();
 
@@ -64,8 +67,17 @@ app.get('*', (req, res) => {
 // WebSocket connection handler
 wss.on('connection', (ws) => {
   console.log('New WebSocket connection');
+  ws.isAlive = true;
+  // Suppress ECONNRESET and other low-level socket errors that occur when
+  // a client disconnects abruptly without a proper TCP close handshake.
+  ws._socket.on('error', (err) => {
+    if (err.code === 'ECONNRESET' || err.code === 'EPIPE') return;
+    console.error('WebSocket socket error:', err);
+  });
   handleWebSocket(ws, wss);
 });
+
+startHeartbeat(wss);
 
 // Store WebSocket server in app for use in routes
 app.locals.wss = wss;
@@ -84,6 +96,7 @@ async function start() {
     console.log('Initializing database...');
     await initializeDatabase();
     console.log('✅ Database initialized successfully');
+    initCache();
 
     server.listen(PORT, () => {
       console.log(`🚀 Server running on http://localhost:${PORT}`);

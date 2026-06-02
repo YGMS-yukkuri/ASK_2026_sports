@@ -26,7 +26,9 @@ export function useWebSocket(onMessage) {
         // Determine WebSocket protocol and host
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
         const host = window.location.host // Includes hostname and port (or default port)
-        const wsUrl = `${protocol}//${host}`
+        // Use /ws path so Vite dev proxy can forward it to the backend, and
+        // production uses the same path consistently.
+        const wsUrl = `${protocol}//${host}/ws`
 
         console.log(`[WebSocket] Attempting to connect to ${wsUrl}`)
 

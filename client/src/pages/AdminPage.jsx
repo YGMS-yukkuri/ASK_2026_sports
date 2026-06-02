@@ -26,7 +26,12 @@ export default function AdminPage() {
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
       return imageUrl
     }
-    // Use relative paths for images (works in both dev and production)
+    // Route image requests through /api so they reach the backend even when
+    // accessed externally via the front-end host (dev proxy / reverse proxy).
+    // Normalizes legacy "/images/..." paths stored in older posts.
+    if (imageUrl.startsWith('/images/')) {
+      return `/api${imageUrl}`
+    }
     return imageUrl
   }
 

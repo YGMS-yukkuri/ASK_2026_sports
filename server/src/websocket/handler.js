@@ -1,10 +1,10 @@
 import { query } from '../db/index.js';
 
 export function handleWebSocket(ws, wss) {
-  let isAlive = true;
-
+  // ws.isAlive is set to true in the connection handler before this is called,
+  // and is reset by the heartbeat interval.
   ws.on('pong', () => {
-    isAlive = true;
+    ws.isAlive = true;
   });
 
   ws.on('message', async (data) => {

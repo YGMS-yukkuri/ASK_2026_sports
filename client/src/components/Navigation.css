@@ -70,6 +70,23 @@
   display: inline-block;
 }
 
+.nav-help-btn {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.nav-help-btn:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
 .nav-post-btn {
   background: white;
   color: #667eea;

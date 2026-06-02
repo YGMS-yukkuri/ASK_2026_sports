@@ -5,6 +5,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import { query } from '../db/index.js';
 import { checkNSFW } from '../utils/nsfw.js';
+import { cacheGet, cacheSet, cacheInvalidatePrefix } from '../utils/cache.js';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -37,14 +38,31 @@ const upload = multer({
   }
 });
 
-// GET all posts
+// GET all posts — cursor-based pagination (keyset) to avoid OFFSET degradation.
+// Query params: limit, before (ISO timestamp), beforeId (UUID) for the cursor.
 router.get('/', async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 20;
-    const offset = parseInt(req.query.offset) || 0;
+    const limit = Math.min(parseInt(req.query.limit) || 20, 50);
+    const before = req.query.before || null;
+    const beforeId = req.query.beforeId || null;
+
+    const cacheKey = `posts:${limit}:${before || ''}:${beforeId || ''}`;
+    const cached = await cacheGet(cacheKey);
+    if (cached) return res.json(cached);
+
+    const params = [limit];
+    let whereClause = 'WHERE p.deleted = false';
+
+    if (before && beforeId) {
+      whereClause += ` AND (
+        p.timestamp < $2::timestamptz
+        OR (p.timestamp = $2::timestamptz AND p.id::text < $3::text)
+      )`;
+      params.push(before, beforeId);
+    }
 
     const result = await query(
-      `SELECT 
+      `SELECT
         p.id,
         p.device_id,
         p.nickname,
@@ -63,17 +81,18 @@ router.get('/', async (req, res) => {
           '{}'::json
         ) as reactions
       FROM posts p
-      WHERE p.deleted = false
+      ${whereClause}
       GROUP BY p.id
-      ORDER BY p.timestamp DESC
-      LIMIT $1 OFFSET $2`,
-      [limit, offset]
+      ORDER BY p.timestamp DESC, p.id DESC
+      LIMIT $1`,
+      params
     );
 
-    res.json({
-      posts: result.rows,
-      total: (await query('SELECT COUNT(*) FROM posts WHERE deleted = false')).rows[0].count
-    });
+    const total = (await query('SELECT COUNT(*) FROM posts WHERE deleted = false')).rows[0].count;
+    const payload = { posts: result.rows, total };
+
+    await cacheSet(cacheKey, payload, 5); // 5-second TTL
+    res.json(payload);
   } catch (error) {
     console.error('Error fetching posts:', error);
     res.status(500).json({ error: 'Failed to fetch posts' });
@@ -108,7 +127,7 @@ router.post('/', upload.single('image'), async (req, res) => {
     }
 
     const postId = uuidv4();
-    const imageUrl = req.file ? `/images/${req.file.filename}` : null;
+    const imageUrl = req.file ? `/api/images/${req.file.filename}` : null;
 
     const result = await query(
       `INSERT INTO posts (id, device_id, nickname, content, image_url, timestamp)
@@ -118,6 +137,9 @@ router.post('/', upload.single('image'), async (req, res) => {
     );
 
     const post = result.rows[0];
+
+    // Invalidate posts cache so next GET reflects the new post
+    await cacheInvalidatePrefix('posts:');
 
     // Notify WebSocket clients
     const wss = req.app.locals.wss;
@@ -199,7 +221,10 @@ router.post('/:postId/reactions', async (req, res) => {
       reactionsObj[r.reaction_type] = parseInt(r.count);
     });
 
-    // Notify WebSocket clients
+    const added = existing.rows.length === 0;
+
+    // Notify WebSocket clients — include which reaction changed so clients
+    // can trigger the emoji scatter effect for all viewers.
     const wss = req.app.locals.wss;
     if (wss) {
       wss.clients.forEach(client => {
@@ -208,7 +233,9 @@ router.post('/:postId/reactions', async (req, res) => {
             type: 'reaction_update',
             data: {
               postId,
-              reactions: reactionsObj
+              reactions: reactionsObj,
+              changedReaction: reaction_type,
+              added
             }
           }));
         }
@@ -216,7 +243,7 @@ router.post('/:postId/reactions', async (req, res) => {
     }
 
     res.json({
-      message: existing.rows.length > 0 ? 'Reaction removed' : 'Reaction added',
+      message: added ? 'Reaction added' : 'Reaction removed',
       reactions: reactionsObj
     });
   } catch (error) {

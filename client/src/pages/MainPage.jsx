@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import './MainPage.css'
 import PostCard from '../components/PostCard'
 import PostModal from '../components/PostModal'
+import { EmojiEffectLayer, useEmojiEffect } from '../components/EmojiEffect'
 import { useWebSocket } from '../hooks/useWebSocket'
 
 export default function MainPage({ deviceId, showPostModal, onCloseModal }) {
@@ -9,7 +10,12 @@ export default function MainPage({ deviceId, showPostModal, onCloseModal }) {
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(0)
   const [totalPosts, setTotalPosts] = useState(0)
+  // cursorStack[i] = { timestamp, id } to fetch page i (null for first page).
+  // Enables keyset (cursor) pagination — no OFFSET, O(log n) regardless of depth.
+  const [cursorStack, setCursorStack] = useState([null])
   const postsPerPage = 10
+
+  const { containerRef: emojiContainerRef, trigger: triggerEmoji } = useEmojiEffect()
 
   const { connected } = useWebSocket((message) => {
     if (message.type === 'new_post') {
@@ -17,28 +23,44 @@ export default function MainPage({ deviceId, showPostModal, onCloseModal }) {
     } else if (message.type === 'post_deleted') {
       setPosts(prev => prev.filter(p => p.id !== message.data.postId))
     } else if (message.type === 'reaction_update') {
-      setPosts(prev => prev.map(p => 
-        p.id === message.data.postId 
+      setPosts(prev => prev.map(p =>
+        p.id === message.data.postId
           ? { ...p, reactions: message.data.reactions }
           : p
       ))
+      if (message.data.added && message.data.changedReaction) {
+        triggerEmoji(message.data.changedReaction)
+      }
     }
   })
 
   useEffect(() => {
-    fetchPosts(0)
+    fetchPosts(0, null)
   }, [])
 
-  async function fetchPosts(pageNum) {
+  async function fetchPosts(pageNum, cursor) {
     try {
       setLoading(true)
-      const response = await fetch(
-        `/api/posts?limit=${postsPerPage}&offset=${pageNum * postsPerPage}`
-      )
+      const params = new URLSearchParams({ limit: postsPerPage })
+      if (cursor) {
+        params.set('before', cursor.timestamp)
+        params.set('beforeId', cursor.id)
+      }
+      const response = await fetch(`/api/posts?${params}`)
       const data = await response.json()
       setPosts(data.posts)
       setTotalPosts(data.total)
       setPage(pageNum)
+
+      // Store cursor for the next page (last item of the current page)
+      if (data.posts.length > 0) {
+        const last = data.posts[data.posts.length - 1]
+        setCursorStack(prev => {
+          const next = [...prev]
+          next[pageNum + 1] = { timestamp: last.timestamp, id: last.id }
+          return next
+        })
+      }
     } catch (error) {
       console.error('Error fetching posts:', error)
     } finally {
@@ -50,7 +72,8 @@ export default function MainPage({ deviceId, showPostModal, onCloseModal }) {
 
   return (
     <div className="main-page">
-      <PostModal 
+      <EmojiEffectLayer containerRef={emojiContainerRef} />
+      <PostModal
         deviceId={deviceId}
         isOpen={showPostModal}
         onClose={onCloseModal}
@@ -61,20 +84,14 @@ export default function MainPage({ deviceId, showPostModal, onCloseModal }) {
       ) : posts.length === 0 ? (
         <div className="no-posts">
           <p>まだ投稿がありません</p>
-          <button 
-            className="btn-post-large"
-            onClick={() => setShowPostModal(true)}
-          >
-            ✏️ 最初の投稿をしてみよう！
-          </button>
         </div>
       ) : (
         <>
           <div className="posts-container">
             {posts.map(post => (
-              <PostCard 
-                key={post.id} 
-                post={post} 
+              <PostCard
+                key={post.id}
+                post={post}
                 deviceId={deviceId}
                 isOwnPost={post.device_id === deviceId}
               />
@@ -84,7 +101,7 @@ export default function MainPage({ deviceId, showPostModal, onCloseModal }) {
           {totalPages > 1 && (
             <div className="pagination">
               <button
-                onClick={() => fetchPosts(page - 1)}
+                onClick={() => fetchPosts(page - 1, cursorStack[page - 1] ?? null)}
                 disabled={page === 0}
               >
                 前へ
@@ -93,7 +110,7 @@ export default function MainPage({ deviceId, showPostModal, onCloseModal }) {
                 {page + 1} / {totalPages}
               </span>
               <button
-                onClick={() => fetchPosts(page + 1)}
+                onClick={() => fetchPosts(page + 1, cursorStack[page + 1] ?? null)}
                 disabled={page >= totalPages - 1}
               >
                 次へ

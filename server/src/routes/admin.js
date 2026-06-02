@@ -1,5 +1,6 @@
 import express from 'express';
 import { query } from '../db/index.js';
+import { cacheInvalidatePrefix } from '../utils/cache.js';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -77,6 +78,7 @@ router.post('/posts/:postId/delete', adminAuth, async (req, res) => {
 
     // Delete post from database
     await query('DELETE FROM posts WHERE id = $1', [postId]);
+    await cacheInvalidatePrefix('posts:');
 
     // Notify WebSocket clients
     const wss = req.app.locals.wss;

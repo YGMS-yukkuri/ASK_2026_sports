@@ -1,6 +1,27 @@
 import { useState, useEffect } from 'react'
 import './PostCard.css'
 
+function PostImage({ src, alt }) {
+  const [state, setState] = useState('loading') // loading | loaded | error
+
+  return (
+    <div className="post-image-wrapper">
+      {state === 'loading' && <div className="image-skeleton" aria-hidden="true" />}
+      {state === 'error' && (
+        <div className="image-error" aria-label="画像を読み込めませんでした">📷</div>
+      )}
+      <img
+        src={src}
+        alt={alt}
+        loading="lazy"
+        className={`post-image${state === 'loaded' ? ' loaded' : ''}`}
+        onLoad={() => setState('loaded')}
+        onError={() => setState('error')}
+      />
+    </div>
+  )
+}
+
 const REACTIONS = {
   like: '👍',
   heart: '❤️',
@@ -106,7 +127,12 @@ export default function PostCard({ post, deviceId, isOwnPost }) {
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
       return imageUrl;
     }
-    // Use relative paths for images (works in both dev and production)
+    // Route image requests through /api so they reach the backend even when
+    // accessed externally via the front-end host (dev proxy / reverse proxy).
+    // Normalizes legacy "/images/..." paths stored in older posts.
+    if (imageUrl.startsWith('/images/')) {
+      return `/api${imageUrl}`;
+    }
     return imageUrl;
   };
 
@@ -124,7 +150,7 @@ export default function PostCard({ post, deviceId, isOwnPost }) {
       </div>
 
       {post.image_url && (
-        <img src={getImageUrl(post.image_url)} alt="Post image" className="post-image" />
+        <PostImage src={getImageUrl(post.image_url)} alt="投稿画像" />
       )}
 
       <div className="post-footer">
