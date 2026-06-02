@@ -120,20 +120,23 @@ export default function PostCard({ post, deviceId, isOwnPost }) {
 
   const timestamp = new Date(post.timestamp).toLocaleString('ja-JP')
 
-  // Build complete image URL
+  // Build a safe image URL. Rejects dangerous protocols to prevent XSS.
   const getImageUrl = (imageUrl) => {
     if (!imageUrl) return null;
-    // If it's already an absolute URL, return as-is
+    const lower = imageUrl.toLowerCase().replace(/\s/g, '');
+    // Block javascript:, data:text/html, vbscript:, and similar
+    if (/^(javascript|vbscript|data:text\/html|data:application):/i.test(lower)) return null;
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
       return imageUrl;
     }
-    // Route image requests through /api so they reach the backend even when
-    // accessed externally via the front-end host (dev proxy / reverse proxy).
-    // Normalizes legacy "/images/..." paths stored in older posts.
     if (imageUrl.startsWith('/images/')) {
       return `/api${imageUrl}`;
     }
-    return imageUrl;
+    // Only allow /api/images/ relative paths from the server
+    if (imageUrl.startsWith('/api/images/')) {
+      return imageUrl;
+    }
+    return null;
   };
 
   return (

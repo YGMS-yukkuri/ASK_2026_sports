@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import { WebSocketServer } from 'ws';
 import http from 'http';
 import dotenv from 'dotenv';
@@ -34,7 +35,33 @@ const server = http.createServer(app);
 // Create WebSocket server
 const wss = new WebSocketServer({ server });
 
-// Middleware
+// Security headers
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: [
+        "'self'",
+        "'unsafe-inline'",           // React inline styles
+        "https://fonts.googleapis.com",
+      ],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "blob:", "data:"],  // blob: for image preview in PostModal
+      connectSrc: [
+        "'self'",
+        "ws:",   // WebSocket (ws://)
+        "wss:",  // WebSocket (wss://)
+      ],
+      frameAncestors: ["'none'"],    // Clickjacking protection
+      objectSrc: ["'none'"],
+      baseUri: ["'self'"],
+    },
+  },
+  crossOriginEmbedderPolicy: false,  // allow images from same origin without COEP issues
+}));
+
+// CORS
 app.use(cors({
   origin: process.env.CORS_ORIGIN || '*',
   credentials: true

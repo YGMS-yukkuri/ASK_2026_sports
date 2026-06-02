@@ -20,19 +20,20 @@ export default function AdminPage() {
   const [error, setError] = useState('')
   const [animatingReactions, setAnimatingReactions] = useState({}) // postId_reactionType -> true
 
-  // Helper function to convert relative image URLs to absolute
+  // Build a safe image URL. Rejects dangerous protocols to prevent XSS.
   const getImageUrl = (imageUrl) => {
     if (!imageUrl) return null
+    if (/^(javascript|vbscript|data:text\/html|data:application):/i.test(imageUrl)) return null
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
       return imageUrl
     }
-    // Route image requests through /api so they reach the backend even when
-    // accessed externally via the front-end host (dev proxy / reverse proxy).
-    // Normalizes legacy "/images/..." paths stored in older posts.
     if (imageUrl.startsWith('/images/')) {
       return `/api${imageUrl}`
     }
-    return imageUrl
+    if (imageUrl.startsWith('/api/images/')) {
+      return imageUrl
+    }
+    return null
   }
 
   // WebSocket for real-time updates
