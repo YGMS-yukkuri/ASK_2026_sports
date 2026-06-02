@@ -1,0 +1,7 @@
+sports.stemask.com {
+	# Origin runs behind Cloudflare (proxied). Cloudflare terminates the
+	# browser-facing TLS with a trusted cert; this self-signed cert is only for
+	# the Cloudflare <-> origin hop. Cloudflare SSL/TLS mode must be "Full".
+	tls internal
+	reverse_proxy localhost:5000
+}

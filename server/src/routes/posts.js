@@ -99,10 +99,22 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Strip HTML tags and null bytes to prevent stored XSS / injection.
+function sanitizeText(str) {
+  if (typeof str !== 'string') return '';
+  return str
+    .replace(/\0/g, '')              // null bytes
+    .replace(/<[^>]*>/g, '')         // HTML tags
+    .replace(/javascript:/gi, '')    // inline JS protocol
+    .trim();
+}
+
 // POST new post
 router.post('/', upload.single('image'), async (req, res) => {
   try {
-    const { nickname, content, device_id } = req.body;
+    const nickname = sanitizeText(req.body.nickname);
+    const content  = sanitizeText(req.body.content);
+    const { device_id } = req.body;
 
     // Validation
     if (!nickname || !content || !device_id) {
@@ -111,6 +123,10 @@ router.post('/', upload.single('image'), async (req, res) => {
 
     if (content.length > 200) {
       return res.status(400).json({ error: 'Content exceeds 200 characters' });
+    }
+
+    if (nickname.length > 50) {
+      return res.status(400).json({ error: 'Nickname exceeds 50 characters' });
     }
 
     // NSFW check
@@ -141,18 +157,21 @@ router.post('/', upload.single('image'), async (req, res) => {
     // Invalidate posts cache so next GET reflects the new post
     await cacheInvalidatePrefix('posts:');
 
-    // Notify WebSocket clients
+    // Notify WebSocket clients — serialize once and reuse the same string for
+    // every client (avoids re-stringifying the identical payload per connection,
+    // which is the dominant CPU cost when broadcasting to thousands of clients).
     const wss = req.app.locals.wss;
     if (wss) {
+      const payload = JSON.stringify({
+        type: 'new_post',
+        data: {
+          ...post,
+          reactions: {}
+        }
+      });
       wss.clients.forEach(client => {
         if (client.readyState === 1) { // OPEN
-          client.send(JSON.stringify({
-            type: 'new_post',
-            data: {
-              ...post,
-              reactions: {}
-            }
-          }));
+          client.send(payload);
         }
       });
     }
@@ -224,20 +243,22 @@ router.post('/:postId/reactions', async (req, res) => {
     const added = existing.rows.length === 0;
 
     // Notify WebSocket clients — include which reaction changed so clients
-    // can trigger the emoji scatter effect for all viewers.
+    // can trigger the emoji scatter effect for all viewers. Serialize once and
+    // reuse the same string for every client (see note in the new-post handler).
     const wss = req.app.locals.wss;
     if (wss) {
+      const payload = JSON.stringify({
+        type: 'reaction_update',
+        data: {
+          postId,
+          reactions: reactionsObj,
+          changedReaction: reaction_type,
+          added
+        }
+      });
       wss.clients.forEach(client => {
         if (client.readyState === 1) { // OPEN
-          client.send(JSON.stringify({
-            type: 'reaction_update',
-            data: {
-              postId,
-              reactions: reactionsObj,
-              changedReaction: reaction_type,
-              added
-            }
-          }));
+          client.send(payload);
         }
       });
     }

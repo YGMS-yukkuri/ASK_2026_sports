@@ -24,6 +24,10 @@ lerna-debug.log*
 .env.local
 .env.*.local
 
+# Secrets / SSH keys (never commit private keys)
+*.pem
+*.key
+
 # Editor
 .vscode/
 .idea/
