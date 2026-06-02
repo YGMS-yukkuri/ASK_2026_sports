@@ -70,6 +70,14 @@
   display: inline-block;
 }
 
+/* Mobile-only status shown below the title in the center block */
+.connection-status-mobile {
+  display: none;
+  font-size: 11px;
+  opacity: 0.9;
+  white-space: nowrap;
+}
+
 .nav-help-btn {
   background: rgba(255, 255, 255, 0.2);
   color: white;
@@ -127,9 +135,9 @@
 
 @media (max-width: 640px) {
   .navbar-container {
-    flex-wrap: wrap;
-    padding: 10px 15px;
-    gap: 10px;
+    flex-wrap: nowrap;
+    padding: 8px 12px;
+    gap: 8px;
   }
 
   .navbar-brand {
@@ -137,16 +145,29 @@
   }
 
   .navbar-center h1 {
-    font-size: 20px;
+    font-size: 18px;
   }
 
   .navbar-center p {
-    font-size: 11px;
     display: none;
   }
 
+  /* Move status indicator under the title; hide it from the controls row */
+  .connection-status {
+    display: none;
+  }
+
+  .connection-status-mobile {
+    display: inline-block;
+  }
+
+  .nav-help-btn {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+  }
+
   .nav-post-btn {
-    padding: 6px 12px;
+    padding: 6px 10px;
     font-size: 0.8rem;
   }
 }

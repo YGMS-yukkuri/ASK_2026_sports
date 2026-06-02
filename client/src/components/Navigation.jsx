@@ -15,6 +15,7 @@ export default function Navigation({ onPostClick, onHelpClick }) {
         <div className="navbar-center">
           <h1>体育祭掲示板</h1>
           <p>メッセージを投稿して感想を共有しよう！</p>
+          {connected && <span className="connection-status-mobile">🟢 オンライン</span>}
         </div>
         <div className="navbar-controls">
           {connected && <span className="connection-status">🟢 オンライン</span>}
