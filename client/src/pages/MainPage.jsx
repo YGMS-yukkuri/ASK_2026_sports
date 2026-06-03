@@ -32,7 +32,7 @@ export default function MainPage({ deviceId, showPostModal, onCloseModal }) {
         triggerEmoji(message.data.changedReaction)
       }
     }
-  })
+  }, { deviceId, role: 'user' })
 
   useEffect(() => {
     fetchPosts(0, null)

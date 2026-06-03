@@ -1,12 +1,16 @@
 import { useEffect, useState, useRef } from 'react'
 
-export function useWebSocket(onMessage) {
+export function useWebSocket(onMessage, identify) {
   const [connected, setConnected] = useState(false)
   const ws = useRef(null)
   const reconnectAttempts = useRef(0)
   const maxReconnectAttempts = 5
   const reconnectDelay = useRef(1000)
   const hasInitialized = useRef(false)
+  // Identify payload (e.g. { deviceId, role }) sent on every (re)connect so the
+  // server can track presence by device and grant roles.
+  const identifyRef = useRef(identify)
+  identifyRef.current = identify
 
   useEffect(() => {
     // Prevent double initialization
@@ -39,6 +43,12 @@ export function useWebSocket(onMessage) {
           setConnected(true)
           reconnectAttempts.current = 0
           reconnectDelay.current = 1000
+
+          // Announce identity so the server can count unique online devices.
+          const id = identifyRef.current
+          if (id && id.deviceId) {
+            ws.current.send(JSON.stringify({ type: 'identify', ...id }))
+          }
         }
 
         ws.current.onmessage = (event) => {

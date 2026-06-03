@@ -36,9 +36,13 @@ export default function AdminPage() {
     return null
   }
 
+  const deviceId = localStorage.getItem('device_id')
+
   // WebSocket for real-time updates
-  const { connected } = useWebSocket((message) => {
-    if (message.type === 'new_post') {
+  const { connected, send } = useWebSocket((message) => {
+    if (message.type === 'stats_update') {
+      setStats(message.data)
+    } else if (message.type === 'new_post') {
       setPosts(prev => [message.data, ...prev])
     } else if (message.type === 'post_deleted') {
       setPosts(prev => prev.filter(p => p.id !== message.data.postId))
@@ -68,52 +72,76 @@ export default function AdminPage() {
       })
       
       // Update posts
-      setPosts(prev => prev.map(p => 
-        p.id === postId 
+      setPosts(prev => prev.map(p =>
+        p.id === postId
           ? { ...p, reactions: message.data.reactions }
           : p
       ))
     }
-  })
+  }, { deviceId, role: 'user' })
 
-  async function handleLogin(e) {
-    e.preventDefault()
+  // Restore session: auto-login if a password was persisted from a prior login.
+  useEffect(() => {
+    const saved = localStorage.getItem('admin_password')
+    if (saved) doLogin(saved, true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Upgrade this socket to the admin role (password-checked server-side) so it
+  // receives live stats_update broadcasts. Re-runs on reconnect.
+  useEffect(() => {
+    if (isAuthenticated && connected && password) {
+      send({ type: 'identify', deviceId, role: 'admin', password })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, connected, password])
+
+  async function doLogin(pwd, silent = false) {
     try {
       setLoading(true)
-      setError('')
-      
+      if (!silent) setError('')
+
       const response = await fetch('/api/admin/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password })
+        body: JSON.stringify({ password: pwd })
       })
 
       if (!response.ok) {
-        setError('パスワードが正しくありません')
-        return
+        // Stored password no longer valid — drop it so we don't loop.
+        localStorage.removeItem('admin_password')
+        if (!silent) setError('パスワードが正しくありません')
+        return false
       }
 
       const data = await response.json()
       setPosts(data.posts)
+      setPassword(pwd)
       setIsAuthenticated(true)
-      
-      // Fetch statistics
+      localStorage.setItem('admin_password', pwd)
+
+      // Fetch initial statistics (kept fresh afterwards via WebSocket).
       const statsResponse = await fetch('/api/admin/statistics', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password })
+        body: JSON.stringify({ password: pwd })
       })
-      
       if (statsResponse.ok) {
-        const statsData = await statsResponse.json()
-        setStats(statsData)
+        setStats(await statsResponse.json())
       }
+      return true
     } catch (err) {
       console.error('Error logging in:', err)
-      setError('ログインに失敗しました')
+      if (!silent) setError('ログインに失敗しました')
+      return false
     } finally {
       setLoading(false)
     }
+  }
+
+  function handleLogin(e) {
+    e.preventDefault()
+    doLogin(password)
   }
 
   // Handle badge animation end to reset animation state
@@ -189,9 +217,12 @@ export default function AdminPage() {
         <button
           className="btn btn-secondary btn-small"
           onClick={() => {
+            localStorage.removeItem('admin_password')
+            send({ type: 'identify', deviceId, role: 'user' })
             setIsAuthenticated(false)
             setPassword('')
             setPosts([])
+            setStats(null)
           }}
         >
           ログアウト

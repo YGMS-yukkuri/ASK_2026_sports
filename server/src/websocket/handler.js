@@ -1,4 +1,6 @@
 import { query } from '../db/index.js';
+import { addDevice, removeDevice, broadcastPresence } from './presence.js';
+import { broadcastStats } from '../utils/stats.js';
 
 export function handleWebSocket(ws, wss) {
   // ws.isAlive is set to true in the connection handler before this is called,
@@ -14,6 +16,22 @@ export function handleWebSocket(ws, wss) {
       switch (message.type) {
         case 'ping':
           ws.send(JSON.stringify({ type: 'pong' }));
+          break;
+
+        case 'identify':
+          // First identify for this socket registers the device for presence.
+          if (message.deviceId && !ws.deviceId) {
+            ws.deviceId = message.deviceId;
+            addDevice(ws.deviceId);
+            broadcastPresence(wss);
+          }
+          // Grant admin role only with a valid password, then push live stats.
+          if (message.role === 'admin' && message.password === process.env.ADMIN_PASSWORD) {
+            ws.isAdmin = true;
+            broadcastStats(wss);
+          } else if (message.role === 'user') {
+            ws.isAdmin = false;
+          }
           break;
 
         case 'sync_posts':
@@ -33,6 +51,10 @@ export function handleWebSocket(ws, wss) {
   });
 
   ws.on('close', () => {
+    if (ws.deviceId) {
+      removeDevice(ws.deviceId);
+      broadcastPresence(wss);
+    }
     console.log('WebSocket connection closed');
   });
 

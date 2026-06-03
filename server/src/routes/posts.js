@@ -6,6 +6,7 @@ import fs from 'fs/promises';
 import { query } from '../db/index.js';
 import { checkNSFW } from '../utils/nsfw.js';
 import { cacheGet, cacheSet, cacheInvalidatePrefix } from '../utils/cache.js';
+import { broadcastStats } from '../utils/stats.js';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -174,6 +175,7 @@ router.post('/', upload.single('image'), async (req, res) => {
           client.send(payload);
         }
       });
+      broadcastStats(wss); // live admin stats (totalPosts / uniqueDevices)
     }
 
     res.status(201).json({
@@ -261,6 +263,7 @@ router.post('/:postId/reactions', async (req, res) => {
           client.send(payload);
         }
       });
+      broadcastStats(wss); // live admin stats (totalReactions)
     }
 
     res.json({

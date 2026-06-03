@@ -39,6 +39,7 @@ function App() {
     <Router>
       <div className="app">
         <Navigation
+          deviceId={deviceId}
           onPostClick={() => setShowPostModal(true)}
           onHelpClick={() => setShowHelp(true)}
         />

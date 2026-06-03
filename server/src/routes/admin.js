@@ -1,6 +1,7 @@
 import express from 'express';
 import { query } from '../db/index.js';
 import { cacheInvalidatePrefix } from '../utils/cache.js';
+import { broadcastStats } from '../utils/stats.js';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -93,6 +94,7 @@ router.post('/posts/:postId/delete', adminAuth, async (req, res) => {
           }));
         }
       });
+      broadcastStats(wss); // live admin stats after deletion
     }
 
     res.json({ message: 'Post deleted successfully' });
