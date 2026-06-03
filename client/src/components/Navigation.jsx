@@ -36,12 +36,6 @@ export default function Navigation({ deviceId, onPostClick, onHelpClick }) {
           >
             ❓ ヘルプ
           </button>
-          <button
-            className="nav-post-btn"
-            onClick={onPostClick}
-          >
-            ✏️ 新規投稿
-          </button>
         </div>
       </div>
     </nav>
