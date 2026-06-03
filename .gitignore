@@ -44,3 +44,6 @@ Thumbs.db
 
 # Database backups
 *.sql
+
+# Exported production data / user images (local archive, not for VCS)
+/used/
