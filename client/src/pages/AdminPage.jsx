@@ -16,6 +16,7 @@ export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [posts, setPosts] = useState([])
   const [stats, setStats] = useState(null)
+  const [online, setOnline] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [animatingReactions, setAnimatingReactions] = useState({}) // postId_reactionType -> true
@@ -42,6 +43,8 @@ export default function AdminPage() {
   const { connected, send } = useWebSocket((message) => {
     if (message.type === 'stats_update') {
       setStats(message.data)
+    } else if (message.type === 'presence') {
+      setOnline(message.data.online)
     } else if (message.type === 'new_post') {
       setPosts(prev => [message.data, ...prev])
     } else if (message.type === 'post_deleted') {
@@ -240,8 +243,8 @@ export default function AdminPage() {
             <div className="stat-label">総リアクション数</div>
           </div>
           <div className="stat-card">
-            <div className="stat-value">{stats.uniqueDevices}</div>
-            <div className="stat-label">ユニークデバイス</div>
+            <div className="stat-value">{online != null ? online : '—'}</div>
+            <div className="stat-label">現在アクセス数</div>
           </div>
         </div>
       )}
