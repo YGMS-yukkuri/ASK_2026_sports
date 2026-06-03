@@ -110,6 +110,13 @@ function sanitizeText(str) {
     .trim();
 }
 
+// Post creation via the API is disabled. This short-circuit route is
+// registered before the real handler below, so Express answers it first and
+// no upload/DB work happens. Remove this block to re-enable posting.
+router.post('/', (req, res) => {
+  res.status(403).json({ error: '投稿は現在無効化されています' });
+});
+
 // POST new post
 router.post('/', upload.single('image'), async (req, res) => {
   try {
