@@ -48,7 +48,16 @@ export default function AdminPage() {
     } else if (message.type === 'new_post') {
       setPosts(prev => [message.data, ...prev])
     } else if (message.type === 'post_deleted') {
-      setPosts(prev => prev.filter(p => p.id !== message.data.postId))
+      // Soft delete: keep the post in the admin list, just flag it (red bg).
+      setPosts(prev => prev.map(p =>
+        p.id === message.data.postId ? { ...p, deleted: true } : p
+      ))
+    } else if (message.type === 'post_restored') {
+      // Restored from soft delete — clear the flag (or add it back if missing).
+      setPosts(prev => prev.some(p => p.id === message.data.id)
+        ? prev.map(p => p.id === message.data.id ? { ...p, ...message.data } : p)
+        : [message.data, ...prev]
+      )
     } else if (message.type === 'reaction_update') {
       const postId = message.data.postId
       
@@ -167,13 +176,38 @@ export default function AdminPage() {
       })
 
       if (response.ok) {
-        setPosts(prev => prev.filter(p => p.id !== postId))
+        // Soft delete: keep it in the list, flagged (the WebSocket broadcast
+        // also updates other admins).
+        setPosts(prev => prev.map(p =>
+          p.id === postId ? { ...p, deleted: true } : p
+        ))
       } else {
         setError('投稿の削除に失敗しました')
       }
     } catch (err) {
       console.error('Error deleting post:', err)
       setError('投稿の削除に失敗しました')
+    }
+  }
+
+  async function handleRestorePost(postId) {
+    try {
+      const response = await fetch(`/api/admin/posts/${postId}/restore`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password })
+      })
+
+      if (response.ok) {
+        setPosts(prev => prev.map(p =>
+          p.id === postId ? { ...p, deleted: false } : p
+        ))
+      } else {
+        setError('投稿の復元に失敗しました')
+      }
+    } catch (err) {
+      console.error('Error restoring post:', err)
+      setError('投稿の復元に失敗しました')
     }
   }
 
@@ -291,7 +325,14 @@ export default function AdminPage() {
                   </div>
                 )}
 
-                {!post.deleted && (
+                {post.deleted ? (
+                  <button
+                    className="btn btn-restore"
+                    onClick={() => handleRestorePost(post.id)}
+                  >
+                    復元
+                  </button>
+                ) : (
                   <button
                     className="btn btn-delete"
                     onClick={() => handleDeletePost(post.id)}

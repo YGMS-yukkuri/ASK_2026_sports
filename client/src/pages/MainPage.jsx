@@ -22,6 +22,14 @@ export default function MainPage({ deviceId, showPostModal, onCloseModal }) {
       setPosts(prev => [message.data, ...prev])
     } else if (message.type === 'post_deleted') {
       setPosts(prev => prev.filter(p => p.id !== message.data.postId))
+    } else if (message.type === 'post_restored') {
+      // Re-insert the restored post in timestamp order (avoid duplicates).
+      setPosts(prev => {
+        if (prev.some(p => p.id === message.data.id)) return prev
+        return [...prev, message.data].sort(
+          (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+        )
+      })
     } else if (message.type === 'reaction_update') {
       setPosts(prev => prev.map(p =>
         p.id === message.data.postId
